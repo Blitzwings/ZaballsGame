@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZABALL - Game Story Detective</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cinzel', 'serif'],
+                    },
+                    colors: {
+                        dark: {
+                            base: '#08080a',
+                            card: 'rgba(15, 15, 22, 0.85)',
+                            border: 'rgba(255, 255, 255, 0.12)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #050507;
+            background-image: 
+                radial-gradient(circle at 50% 15%, #151624 0%, #08080c 55%, #020203 100%);
+            background-attachment: fixed;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Container styling with ultra-thin white border */
+        .glass-box {
+            background: rgba(14, 14, 20, 0.80);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Interactive Glass Card for Options & Suspects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card:hover, .glass-card:active {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        /* Entrance Fade-In Animation */
+        .fade-enter {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Real Dynamic Stamp Effect Styles */
+        .stamp {
+            display: inline-block;
+            padding: 0.35rem 1.25rem;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-family: 'Cinzel', serif;
+            border-radius: 8px;
+            transform: rotate(-10deg);
+            animation: stampBounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .stamp-failed {
+            color: #ef4444;
+            border: 3.5px solid #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.35), inset 0 0 12px rgba(239, 68, 68, 0.25);
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+        }
+
+        .stamp-success {
+            color: #10b981;
+            border: 3.5px solid #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.35), inset 0 0 12px rgba(16, 185, 129, 0.25);
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+        }
+
+        @keyframes stampBounce {
+            0% {
+                opacity: 0;
+                transform: scale(2.8) rotate(-22deg);
+            }
+            100% {
+                opacity: 0.95;
+                transform: scale(1) rotate(-10deg);
+            }
+        }
+
+        /* Custom Styled Inputs & Radio Buttons */
+        .custom-radio:checked + label {
+            border-color: rgba(255, 255, 255, 0.6);
+            background-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.12);
+        }
+
+        /* Custom Scrollbar for sleek dark look */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(8, 8, 12, 0.8); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="font-sans antialiased flex flex-col min-h-screen relative overflow-x-hidden selection:bg-white selection:text-black">
+
+    <header class="w-full px-4 sm:px-8 py-5 flex items-center justify-between z-20 max-w-7xl mx-auto">
+        <div class="flex items-center space-x-2.5 sm:space-x-3">
+            <h1 class="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-[0.2em] sm:tracking-[0.25em] text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]">
+                ZABALL
+            </h1>
+            <span class="text-[9px] sm:text-[10px] tracking-widest text-gray-400 uppercase border border-gray-800 px-2 py-0.5 rounded bg-white/5 font-mono">
+                Game Story
+            </span>
+        </div>
+        <div id="playerBadge" class="hidden text-[11px] sm:text-xs text-gray-400 font-mono tracking-wider border border-white/10 px-3 py-1 rounded-full bg-white/5 backdrop-blur-md">
+            PENYELIDIK: <span id="displayName" class="text-white font-semibold"></span>
+        </div>
+    </header>
+
+    <main class="flex-1 flex items-center justify-center p-3 sm:p-6 md:p-8 z-10 w-full max-w-6xl mx-auto">
+
+        <!-- SCREEN 1: Welcome & Name Entry -->
+        <section id="screenWelcome" class="w-full max-w-lg glass-box rounded-2xl p-6 sm:p-10 text-center fade-enter relative overflow-hidden my-auto">
+            <div class="absolute -top-20 -left-20 w-40 h-40 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="mb-6 sm:mb-8">
+                <span class="text-[10px] sm:text-xs uppercase tracking-[0.25em] sm:tracking-[0.3em] text-gray-400 font-semibold mb-2 block">Investigasi Forensik Logis</span>
+                <h2 class="font-serif text-xl sm:text-2xl md:text-3xl text-white font-bold tracking-wider uppercase mb-3">Misteri Penthouse Apex Crest Tower</h2>
+                <p class="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
+                    Uji pemikiran lateral, ketelitian, wawasan ilmiah, fisiologi forensik, geografi, dan kecerdasan logika Anda. Tidak ada petunjuk mudah. Setiap detail kecil menyimpan kuncinya.
+                </p>
+            </div>
+
+            <form id="startForm" onsubmit="startGame(event)" class="space-y-5">
+                <div class="text-left">
+                    <label for="playerName" class="block text-[11px] sm:text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">Nama Detektif / Penyelidik</label>
+                    <input type="text" id="playerName" required autocomplete="off" placeholder="Masukkan nama Anda..." 
+                        class="w-full bg-black/60 border border-white/15 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/50 transition duration-300 text-sm">
+                </div>
+
+                <button type="submit" 
+                    class="w-full py-3.5 sm:py-4 bg-white text-black font-semibold text-xs sm:text-sm uppercase tracking-[0.2em] rounded-xl hover:bg-gray-200 active:scale-[0.98] transition duration-200 shadow-[0_0_20px_rgba(255,255,255,0.15)] flex items-center justify-center space-x-2">
+                    <span>Mulai Game</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-white/5 text-[10px] sm:text-[11px] text-gray-500 font-mono tracking-wide">
+                PERINGATAN: Membutuhkan analisis wawasan dunia nyata, geofisika, dan fenomena biologi.
+            </div>
+        </section>
+
+        <!-- SCREEN 2: Case Story, Suspects, Forensics & Deduction Quiz -->
+        <section id="screenCase" class="w-full glass-box rounded-2xl p-4 sm:p-8 md:p-10 fade-enter hidden my-auto">
+            
+            <!-- Navigation Tabs (Touch Scrollable) -->
+            <div class="flex border-b border-white/10 mb-6 text-xs sm:text-sm font-medium tracking-wider overflow-x-auto no-scrollbar pb-1">
+                <button onclick="switchTab('tabBriefing')" id="btnTabBriefing" class="pb-3 px-3 sm:px-4 text-white border-b-2 border-white font-semibold transition whitespace-nowrap">1. Laporan Kasus</button>
+                <button onclick="switchTab('tabSuspects')" id="btnTabSuspects" class="pb-3 px-3 sm:px-4 text-gray-400 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">2. Kesaksian Tersangka</button>
+                <button onclick="switchTab('tabForensics')" id="btnTabForensics" class="pb-3 px-3 sm:px-4 text-gray-400 hover:text-white border-b-2 border-transparent transition whitespace-nowrap">3. Laporan TKP & Forensik</button>
+                <button onclick="switchTab('tabDeduction')" id="btnTabDeduction" class="pb-3 px-3 sm:px-4 text-amber-400/90 hover:text-amber-300 border-b-2 border-transparent transition whitespace-nowrap font-bold">4. Lembar Deduksi</button>
+            </div>
+
+            <!-- Tab 1: Briefing Story -->
+            <div id="tabBriefing" class="space-y-5 text-gray-300 text-xs sm:text-sm leading-relaxed">
+                <div class="border-l-2 border-white/40 pl-3 sm:pl-4 py-1">
+                    <h3 class="font-serif text-lg sm:text-xl text-white font-bold tracking-wide">Kematian Tuan Arthur Vance</h3>
+                    <p class="text-[11px] text-gray-400 font-mono mt-0.5">Lokasi: Penthouse Lantai 50, Apex Crest Tower, Jakarta (6.2088° S, 106.8456° E)</p>
+                    <p class="text-[11px] text-gray-400 font-mono">Waktu Penemuan Jasad: 21 Juni 2024, Pukul 22:15 WIB</p>
+                </div>
+
+                <p>
+                    Tuan Arthur Vance (58 tahun), kolektor barang antik dan maestro finansial internasional, ditemukan tewas terkunci dari dalam di ruang kerjanya yang luas di lantai 50. Pintu ruang kerja terbuat dari kayu mahoni tebal dengan kait kunci mekanis engsel tunggal yang terkunci dari dalam (anak kunci berada di dalam kantong celana korban). Ruangan memiliki jendela kaca tempered besar yang menghadap langsung ke arah Barat Daya.
+                </p>
+
+                <div class="p-4 bg-white/5 border border-white/10 rounded-xl space-y-1.5">
+                    <h4 class="text-xs uppercase font-bold tracking-wider text-white">Ringkasan Situasi Malam Kejadian:</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Pada sore hari hingga malam tanggal 21 Juni, Arthur mengadakan pertemuan tertutup terbatas dengan 5 orang rekan bisnis serta kerabat dekatnya untuk membahas restrukturisasi aset yayasan senilai $120 Juta USD. Listrik gedung sempat dimatikan total selama 15 menit (Pukul 18:45 – 19:00 WIB) untuk pemeliharaan rutin generator pusat, di mana seluruh kamera CCTV mati total selama rentang waktu tersebut.
+                    </p>
+                </div>
+
+                <p>
+                    Saat pintu didobrak oleh sekuriti gedung pada pukul 22:15 WIB atas desakan para tamu yang tidak mendapat respons, Arthur ditemukan tergeletak telentang di kursi kerja kulitnya dengan pena kaligrafi masih tergenggam di tangan kanan. Tidak ada tanda perkelahian fisik di ruangan.
+                </p>
+            </div>
+
+            <!-- Tab 2: Suspects List -->
+            <div id="tabSuspects" class="space-y-4 hidden">
+                <h3 class="font-serif text-base sm:text-lg text-white font-bold mb-3">Pernyataan & Alibi Para Tersangka</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div class="glass-card p-4 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-xs sm:text-sm">1. Dr. Victor Vance (Dokter Pribadi Korban)</h4>
+                            <span class="text-[9px] text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">Tersangka A</span>
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            "Saya menyuntikkan insulin rutin kepada Arthur pada pukul 17:30 WIB di ruang kerjanya. Setelah itu saya berada di ruang tamu bersama tamu lain. Saat pemadaman listrik jam 18:45, saya tidak ke mana-mana dan hanya menikmati anggur putih di kegelapan. Arthur menderita hipertensi ringan, tapi kondisi jantungnya stabil."
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-xs sm:text-sm">2. Helena Vance (Istri Muda / Pengusaha)</h4>
+                            <span class="text-[9px] text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">Tersangka B</span>
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            "Saya baru saja mendarat di Bandara Soekarno-Hatta dengan penerbangan langsung nonstop dari Tokyo (NH835) pada pukul 19:30 WIB. Saya tiba di penthouse pukul 20:45 WIB. Saya langsung mengetuk pintu ruang kerja suami saya jam 21:00 WIB tapi tidak ada jawaban, saya pikir dia ketiduran. Saya membawa jam tangan mekanik hadiah ulang tahun untuknya."
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-xs sm:text-sm">3. Marcus Thorne (Mitra Bisnis Finansial)</h4>
+                            <span class="text-[9px] text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">Tersangka C</span>
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            "Saat mati lampu pukul 18:45 WIB, saya berdiri di balkon luar ruang tamu untuk merokok. Saya memperhatikan pemandangan kota. Tepat pukul 18:52 WIB, di kegelapan mati lampu, saya melihat bayangan matahari tenggelam tepat di balik menara tinggi di sebelah barat daya, sungguh indah. Arthur berutang saham pada saya, tapi saya tidak membunuhnya!"
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-xs sm:text-sm">4. Chef Ronald (Koki Pribadi)</h4>
+                            <span class="text-[9px] text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">Tersangka D</span>
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            "Saya mengantarkan segelas es teh manis herbal khusus pada pukul 18:15 WIB ke meja kerja Arthur. Es batu yang saya gunakan dibuat dari air murni distilasi tinggi. Ketika mati lampu jam 18:45 WIB, saya sedang berada di dapur menyiapkan hidangan penutup dalam keadaan gelap gulita."
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-xs sm:text-sm">5. Sofia Laurent (Sekretaris Pribadi)</h4>
+                            <span class="text-[9px] text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">Tersangka E</span>
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            "Saya melihat Tuan Arthur meminum habis teh dari Chef Ronald sekitar pukul 18:30 WIB. Pukul 18:40 WIB, Tuan Arthur mengunci pintu dari dalam karena ingin menandatangani dokumen rahasia. Ketika listrik mati pukul 18:45 WIB, saya tertidur di sofa koridor depan ruangan karena sangat lelah."
+                        </p>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-white text-xs sm:text-sm">6. Thomas Wright (Kolektor Astronomic & Antik)</h4>
+                            <span class="text-[9px] text-gray-400 bg-white/5 px-2 py-0.5 rounded border border-white/10">Tersangka F</span>
+                        </div>
+                        <p class="text-xs text-gray-300 leading-relaxed">
+                            "Saya datang pukul 18:00 WIB untuk menawarkan teleskop antik abad ke-18. Saat mati listrik, saya berada di perpustakaan samping meja bar. Saya sempat minum wiski tanpa es. Arthur sempat bilang pada saya jam 18:20 bahwa matanya merasa sedikit kabur setelah minum obat flu."
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Forensics Report -->
+            <div id="tabForensics" class="space-y-4 hidden text-xs leading-relaxed">
+                <h3 class="font-serif text-base sm:text-lg text-white font-bold mb-2">Temuan Laporan Tim Olah TKP & Forensik Kepolisian</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <div class="p-4 bg-black/50 border border-white/10 rounded-xl space-y-2">
+                        <h4 class="font-bold text-white uppercase tracking-wider text-[11px] flex items-center justify-between">
+                            <span>1. Kondisi Fisik Jasad (Pukul 22:30 WIB)</span>
+                            <span class="text-gray-400 text-[10px]">Pemeriksaan Awal</span>
+                        </h4>
+                        <ul class="list-disc pl-4 space-y-1 text-gray-300">
+                            <li>Suhu rektal korban dicatat <strong>31.2°C</strong> (Suhu ruangan dipertahankan AC terpusat pada <strong>20°C</strong>).</li>
+                            <li><em>Rigor Mortis</em> (Kaku Mayat) lengkap dan penuh pada otot rahang, leher, serta jari-jari tangan, namun lengan atas dan tungkai kaki masih relatif fleksibel saat digerakkan.</li>
+                            <li><em>Livor Mortis</em> (Lebab Mayat) berwarna merah keunguan menetap di <strong>bagian punggung, pinggul belakang, dan betis</strong>. Ditemukan bercak lebam tipis ganda di bagian dada depan.</li>
+                            <li>Pupil mata melebar (Mydriasis). Tidak ditemukan tanda trauma tumpul eksternal.</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-4 bg-black/50 border border-white/10 rounded-xl space-y-2">
+                        <h4 class="font-bold text-white uppercase tracking-wider text-[11px]">2. Bukti Fisik di Meja Kerja & Ruangan</h4>
+                        <ul class="list-disc pl-4 space-y-1 text-gray-300">
+                            <li>Satu gelas kosong bekas teh manis herbal dengan sisa es batu cair setinggi 1 cm di dasar gelas. Sisa cairan mengandung jejak konsentrasi tinggi <em>Scopolamine/Atropine</em> (Racun tanaman Alami Kecubung/Belladonna).</li>
+                            <li>AC ruang kerja diset otomatis pada suhu 20°C. Thermostat mencatat kompresor AC sempat dimatikan manual dari pukul 18:45 hingga 19:15 WIB.</li>
+                            <li>Pintu kayu terkunci rapat. Kait mekanisme Kunci Kuno di dalam pintu ditemukan tersangkut benang sutra tipis yang terputus di ambang lantai.</li>
+                            <li>Di atas meja terdapat kacamata baca Arthur, pecahan botol vial kosong tanpa label di tempat sampah, dan dokumen perjanjian yang belum ditandatangani.</li>
+                        </ul>
+                    </div>
+
+                    <div class="p-4 bg-black/50 border border-white/10 rounded-xl space-y-2 md:col-span-2">
+                        <h4 class="font-bold text-white uppercase tracking-wider text-[11px]">3. Catatan Tambahan Geofisika & Penerbangan (Hasil Cek Detektif)</h4>
+                        <ul class="list-disc pl-4 space-y-1 text-gray-300">
+                            <li><strong>Tanggal Kejadian:</strong> 21 Juni (Solstis Musim Panas / Summer Solstice). Di Jakarta (Lintang 6° LS), pada tanggal 21 Juni, posisi matahari tenggelam berada di <strong>Azimut 293° (Barat Laut)</strong>, BUKAN Barat Daya. Matahari terbenam di Jakarta pada tanggal tersebut terjadi sekitar pukul 17:48 WIB (Pada pukul 18:52 WIB langit sudah gelap gulita total).</li>
+                            <li><strong>Penerbangan Tokyo-Jakarta (NH835):</strong> Waktu tempuh rata-rata adalah 7 jam 30 menit. Tokyo menggunakan zona waktu JST (GMT+9), sedangkan Jakarta WIB (GMT+7). Selisih waktu adalah 2 jam. Jadwal keberangkatan resmi flight NH835 dari Tokyo jam 11:00 JST (09:00 WIB) dan tiba pukul 16:30 WIB di Jakarta, BUKAN jam 19:30 WIB.</li>
+                            <li><strong>Laju Penurunan Suhu Mayat (Algor Mortis):</strong> Dalam suhu ruangan 20°C, suhu tubuh turun rata-rata 1.0°C hingga 1.5°C per jam setelah kematian. Suhu normal manusia hidup 37°C. Suhu jasad 31.2°C menunjukkan kematian terjadi sekitar 4 hingga 5 jam sebelum pemeriksaan jam 22:30 WIB (Rentang Waktu Kematian: Pukul 17:30 - 18:30 WIB).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Deduction Quiz Form -->
+            <div id="tabDeduction" class="space-y-5 hidden">
+                <div class="border-b border-white/10 pb-3">
+                    <h3 class="font-serif text-lg sm:text-xl text-white font-bold">Lembar Analisis & Keputusan Detektif</h3>
+                    <p class="text-xs text-gray-400 mt-1">Gunakan seluruh fakta ilmiah, bukti forensik, alibi, dan kontradiksi astronomi/biologi di atas untuk menentukan jawaban secara presisi.</p>
+                </div>
+
+                <form id="deductionForm" onsubmit="submitDeduction(event)" class="space-y-5">
+                    <!-- Question 1: Pelaku Utama -->
+                    <div class="space-y-2.5">
+                        <label class="block text-xs uppercase tracking-widest text-amber-300 font-semibold">
+                            Soal 1: Siapakah Pelaku Utama Pembunuhan Tuan Arthur Vance?
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <input type="radio" id="suspectA" name="suspect" value="A" class="hidden custom-radio">
+                                <label for="suspectA" class="block p-3 rounded-xl glass-card cursor-pointer text-xs text-gray-300 hover:text-white">
+                                    <span class="font-bold text-white block mb-0.5">A. Dr. Victor Vance</span>
+                                    <span>Penyuntik insulin & akses medis.</span>
+                                </label>
+                            </div>
+
+                            <div>
+                                <input type="radio" id="suspectB" name="suspect" value="B" class="hidden custom-radio">
+                                <label for="suspectB" class="block p-3 rounded-xl glass-card cursor-pointer text-xs text-gray-300 hover:text-white">
+                                    <span class="font-bold text-white block mb-0.5">B. Helena Vance</span>
+                                    <span>Istri muda dengan alibi penerbangan Tokyo.</span>
+                                </label>
+                            </div>
+
+                            <div>
+                                <input type="radio" id="suspectC" name="suspect" value="C" class="hidden custom-radio">
+                                <label for="suspectC" class="block p-3 rounded-xl glass-card cursor-pointer text-xs text-gray-300 hover:text-white">
+                                    <span class="font-bold text-white block mb-0.5">C. Marcus Thorne</span>
+                                    <span>Mitra bisnis yang mengaku melihat matahari tenggelam.</span>
+                                </label>
+                            </div>
+
+                            <div>
+                                <input type="radio" id="suspectD" name="suspect" value="D" class="hidden custom-radio">
+                                <label for="suspectD" class="block p-3 rounded-xl glass-card cursor-pointer text-xs text-gray-300 hover:text-white">
+                                    <span class="font-bold text-white block mb-0.5">D. Chef Ronald & Sofia Laurent (Konspirasi)</span>
+                                    <span>Koki pembuat teh beracun dan sekretaris pembuat locked-room.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question 2: Key Evidence -->
+                    <div class="space-y-2">
+                        <label class="block text-xs uppercase tracking-widest text-amber-300 font-semibold">
+                            Soal 2: Bukti Forensik/Ilmiah Utama Manakah yang Mengubah Seluruh Rentang Waktu Kasus (Time of Death)?
+                        </label>
+                        <select id="keyEvidence" required class="w-full bg-black/70 border border-white/20 rounded-xl px-3.5 py-3 text-xs text-white focus:outline-none focus:border-white">
+                            <option value="" disabled selected>-- Pilih Bukti/Fakta Kunci Utama --</option>
+                            <option value="livor">A. Lebam Mayat Ganda & Suhu Tubuh (Kematian terjadi lebih awal sebelum mati lampu, posisi jasad sempat dipindahkan).</option>
+                            <option value="sunset">B. Kebohongan Posisi Matahari Tenggelam di Hari Solstis Musim Panas.</option>
+                            <option value="flight">C. Manipulasi Perbedaan Zona Waktu Penerbangan Tokyo-Jakarta (JST ke WIB).</option>
+                            <option value="door">D. Mekanisme Kunci Terkunci Dari Dalam Menggunakan Benang Sutra.</option>
+                        </select>
+                    </div>
+
+                    <!-- Question 3: Justification -->
+                    <div class="space-y-2">
+                        <label for="justification" class="block text-xs uppercase tracking-widest text-amber-300 font-semibold">
+                            Soal 3: Uraikan Analisis Logika Anda (Jelaskan mengapa Alibi Pelaku Gugur & Cara Kerja Pembunuhan):
+                        </label>
+                        <textarea id="justification" rows="4" required placeholder="Tuliskan runtutan deduksi Anda di sini secara rinci..." 
+                            class="w-full bg-black/60 border border-white/15 rounded-xl p-3 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-white/50 focus:ring-1 focus:ring-white/50"></textarea>
+                    </div>
+
+                    <button type="submit" 
+                        class="w-full py-4 bg-white text-black font-semibold text-xs uppercase tracking-[0.2em] rounded-xl hover:bg-gray-200 transition duration-300 shadow-[0_0_20px_rgba(255,255,255,0.15)] active:scale-[0.99]">
+                        Kirimkan Analisis Final & Buka Kasus
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- SCREEN 3: Results & Investigator ID Card -->
+        <section id="screenResult" class="w-full max-w-2xl glass-box rounded-2xl p-5 sm:p-8 md:p-10 fade-enter hidden space-y-6 my-auto">
+            
+            <!-- Result Evaluation Header -->
+            <div id="resultHeader" class="text-center space-y-2 border-b border-white/10 pb-5">
+                <!-- Evaluation Text rendered via JavaScript -->
+            </div>
+
+            <!-- Investigator ID Badge Container (Black Ops) -->
+            <div class="flex justify-center w-full">
+                <div id="investigatorCard" class="w-full max-w-sm sm:max-w-md bg-gradient-to-br from-zinc-900 via-neutral-950 to-black border border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-[0_15px_35px_rgba(0,0,0,0.9)] relative overflow-hidden">
+                    
+                    <!-- Subtle Metallic Glow Background -->
+                    <div class="absolute -top-16 -right-16 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 via-yellow-200 to-amber-700"></div>
+
+                    <!-- Badge Header -->
+                    <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+                        <div class="flex items-center space-x-2">
+                            <!-- Agency Badge Icon -->
+                            <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 font-serif font-bold text-xs">
+                                B
+                            </div>
+                            <div>
+                                <h4 class="font-serif text-xs sm:text-sm font-bold tracking-widest text-white">BLACK OPS</h4>
+                                <p class="text-[8px] sm:text-[9px] text-amber-400/80 uppercase tracking-wider">Bureau of Investigation</p>
+                            </div>
+                        </div>
+                        <span id="cardBadgeNumber" class="font-mono text-[9px] sm:text-[10px] text-gray-500 tracking-wider">ID: #INV-9082</span>
+                    </div>
+
+                    <!-- Badge Main Content -->
+                    <div class="grid grid-cols-3 gap-3 items-center">
+                        <!-- Silhouette Avatar -->
+                        <div class="col-span-1 flex flex-col items-center">
+                            <div class="w-16 sm:w-20 h-20 sm:h-24 bg-zinc-800/80 border border-white/15 rounded-lg flex items-center justify-center relative overflow-hidden shadow-inner">
+                                <svg class="w-12 sm:w-14 h-12 sm:h-14 text-zinc-600 mt-2" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                                <div class="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-emerald-500 border border-zinc-900"></div>
+                            </div>
+                            <span class="text-[8px] text-gray-500 font-mono mt-1 tracking-wider">VERIFIED</span>
+                        </div>
+
+                        <!-- Details -->
+                        <div class="col-span-2 space-y-2 text-xs">
+                            <div>
+                                <span class="text-[8px] sm:text-[9px] uppercase tracking-wider text-gray-500 block">Nama Penyelidik</span>
+                                <span id="cardPlayerName" class="font-bold text-white tracking-wide text-xs sm:text-sm font-serif"></span>
+                            </div>
+                            <div>
+                                <span class="text-[8px] sm:text-[9px] uppercase tracking-wider text-gray-500 block">Status / Peringkat</span>
+                                <span id="cardRank" class="text-amber-300/90 font-mono font-medium text-[11px] sm:text-xs"></span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1 pt-1 border-t border-white/5">
+                                <div>
+                                    <span class="text-[8px] uppercase text-gray-500 block">Tanggal</span>
+                                    <span id="cardDate" class="text-[9px] sm:text-[10px] font-mono text-gray-300"></span>
+                                </div>
+                                <div>
+                                    <span class="text-[8px] uppercase text-gray-500 block">Otoritas</span>
+                                    <span class="text-[9px] sm:text-[10px] font-mono text-gray-300">BLACK OPS HQ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stamp Overlay Container -->
+                    <div class="mt-4 flex justify-center items-center relative min-h-[45px]">
+                        <div id="stampBox">
+                            <!-- Stamp injected via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Success Screenshot Note -->
+                    <div id="screenshotNote" class="hidden mt-3 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-center">
+                        <p class="text-[10px] sm:text-[11px] font-mono text-emerald-300 tracking-wider">
+                            📸 Note: <span class="font-semibold underline">Screenshot hasil ini</span>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 border-t border-white/10">
+                <button onclick="restartGame()" class="w-full py-3 bg-white text-black font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gray-200 transition active:scale-[0.99]">
+                    Coba Lagi / Mainkan Ulang
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="w-full p-4 text-center text-[10px] sm:text-[11px] text-gray-600 font-mono z-20">
+        &copy; ZABALL Game Story Engine. Designed for Logical Deduction.
+    </footer>
+
+    <script>
+        // State Management
+        let gameState = {
+            playerName: '',
+            selectedSuspect: '',
+            selectedEvidence: '',
+            justificationText: ''
+        };
+
+        window.onload = function() {
+            console.log("Game Story Engine Initialized.");
+        };
+
+        // Start Game Handler
+        function startGame(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('playerName').value.trim();
+            if (!nameInput) return;
+
+            gameState.playerName = nameInput;
+            document.getElementById('displayName').innerText = nameInput.toUpperCase();
+            document.getElementById('playerBadge').classList.remove('hidden');
+
+            document.getElementById('screenWelcome').classList.add('hidden');
+            document.getElementById('screenCase').classList.remove('hidden');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            const tabs = ['tabBriefing', 'tabSuspects', 'tabForensics', 'tabDeduction'];
+            const btnMap = {
+                'tabBriefing': 'btnTabBriefing',
+                'tabSuspects': 'btnTabSuspects',
+                'tabForensics': 'btnTabForensics',
+                'tabDeduction': 'btnTabDeduction'
+            };
+
+            tabs.forEach(id => {
+                const el = document.getElementById(id);
+                const btn = document.getElementById(btnMap[id]);
+                
+                if (id === tabId) {
+                    el.classList.remove('hidden');
+                    btn.classList.add('text-white', 'border-white', 'font-semibold');
+                    btn.classList.remove('text-gray-400', 'border-transparent');
+                } else {
+                    el.classList.add('hidden');
+                    btn.classList.remove('text-white', 'border-white', 'font-semibold');
+                    btn.classList.add('text-gray-400', 'border-transparent');
+                }
+            });
+        }
+
+        // Deduction Form Submission
+        function submitDeduction(event) {
+            event.preventDefault();
+
+            const selectedSuspectRadio = document.querySelector('input[name="suspect"]:checked');
+            if (!selectedSuspectRadio) {
+                alert("Silakan pilih Pelaku Utama terlebih dahulu!");
+                return;
+            }
+
+            gameState.selectedSuspect = selectedSuspectRadio.value;
+            gameState.selectedEvidence = document.getElementById('keyEvidence').value;
+            gameState.justificationText = document.getElementById('justification').value.trim();
+
+            evaluateResult();
+        }
+
+        // Evaluation Engine
+        function evaluateResult() {
+            // Logic validation: Pelaku D (Ronald & Sofia), Key Evidence livor, and at least 2 relevant keywords
+            const isSuspectCorrect = gameState.selectedSuspect === "D";
+            const isEvidenceCorrect = gameState.selectedEvidence === "livor";
+            
+            const text = gameState.justificationText.toLowerCase();
+            const keywords = ['lebam', 'suhu', 'sutra', 'benang', 'scopolamine', 'waktu', 'racun', 'teh', 'kaku'];
+            let keywordMatches = 0;
+            keywords.forEach(kw => {
+                if (text.includes(kw)) keywordMatches++;
+            });
+
+            // True solution condition check
+            const isSuccess = isSuspectCorrect && isEvidenceCorrect && (keywordMatches >= 2);
+
+            const resultHeader = document.getElementById('resultHeader');
+            const cardPlayerName = document.getElementById('cardPlayerName');
+            const cardRank = document.getElementById('cardRank');
+            const cardDate = document.getElementById('cardDate');
+            const cardBadgeNumber = document.getElementById('cardBadgeNumber');
+            const stampBox = document.getElementById('stampBox');
+            const screenshotNote = document.getElementById('screenshotNote');
+
+            // Set Player Name on Card
+            cardPlayerName.innerText = gameState.playerName.toUpperCase();
+
+            // Random ID Code & Date
+            const randomID = Math.floor(1000 + Math.random() * 9000);
+            cardBadgeNumber.innerText = `ID: #INV-${randomID}`;
+            
+            const today = new Date();
+            cardDate.innerText = today.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+
+            if (!isSuccess) {
+                // FAILURE EVALUATION DISPLAY
+                resultHeader.innerHTML = `
+                    <p class="text-xs font-mono text-gray-400">Hasil Evaluasi Kasus</p>
+                    <h2 class="font-serif text-lg sm:text-xl md:text-2xl font-bold text-rose-500 tracking-wide mt-1">DEDUKSI GAGAL: TERKECOH RED HERRING</h2>
+                    <div class="mt-2 inline-block bg-rose-500/10 border border-rose-500/30 px-4 py-1 rounded-full text-xs font-mono text-rose-400">
+                        SKOR: 0/100
+                    </div>
+                    <p class="text-xs text-gray-300 mt-2">Detektif Junior (D-Rank) - Anda terjebak sepenuhnya oleh alibi kebohongan tersangka!</p>
+                `;
+
+                cardRank.innerText = "Detektif Junior (D-Rank)";
+                stampBox.innerHTML = `<span class="stamp stamp-failed text-xl sm:text-2xl tracking-widest">GAGAL</span>`;
+                screenshotNote.classList.add('hidden');
+            } else {
+                // SUCCESS EVALUATION DISPLAY
+                resultHeader.innerHTML = `
+                    <p class="text-xs font-mono text-gray-400">Hasil Evaluasi Kasus</p>
+                    <h2 class="font-serif text-lg sm:text-xl md:text-2xl font-bold text-emerald-400 tracking-wide mt-1">DEDUKSI SEMPURNA: MASTER DETECTIVE</h2>
+                    <div class="mt-2 inline-block bg-emerald-500/10 border border-emerald-500/30 px-4 py-1 rounded-full text-xs font-mono text-emerald-400">
+                        SKOR: 100/100
+                    </div>
+                    <p class="text-xs text-gray-300 mt-2">Detektif Utama (S-Rank) - Anda berhasil memecahkan tabir misteri forensik dan locked room!</p>
+                `;
+
+                cardRank.innerText = "Master Detective (S-Rank)";
+                stampBox.innerHTML = `<span class="stamp stamp-success text-xl sm:text-2xl tracking-widest">SUKSES</span>`;
+                screenshotNote.classList.remove('hidden');
+            }
+
+            // Switch Screen
+            document.getElementById('screenCase').classList.add('hidden');
+            document.getElementById('screenResult').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Restart Game Handler
+        function restartGame() {
+            gameState = {
+                playerName: '',
+                selectedSuspect: '',
+                selectedEvidence: '',
+                justificationText: ''
+            };
+
+            document.getElementById('startForm').reset();
+            document.getElementById('deductionForm').reset();
+            document.getElementById('playerBadge').classList.add('hidden');
+
+            document.getElementById('screenResult').classList.add('hidden');
+            document.getElementById('screenCase').classList.add('hidden');
+            document.getElementById('screenWelcome').classList.remove('hidden');
+
+            switchTab('tabBriefing');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
